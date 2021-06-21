@@ -3,6 +3,9 @@
 
 A simple utility to automatically generate Splitwise expenses based on Pokerrrr2 exported CSV results.
 
+![](./assets/info.png )
+
+
 ## Features
 
 * **Expenses** : Generate splitwise expense entries from exported Pokerrrr2 `.csv` files
