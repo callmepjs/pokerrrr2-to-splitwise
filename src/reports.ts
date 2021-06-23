@@ -1,5 +1,6 @@
 import { Utils } from "./utils";
 import * as _ from 'lodash';
+import { config } from "./config";
 const fs = require('fs');
 const path = require('path');
 const converter = require('json-2-csv');
@@ -50,6 +51,7 @@ export class Reports {
     }
     
     public async publish (folder) {
+        this.sortDataByProfit();
         const opts = { delimiter: { field: ';' }};
         let csv;
         converter.json2csv(this.reportData, (error, result) => {
@@ -64,11 +66,30 @@ export class Reports {
                 console.log('Files procesed      => ' + this.totalReports);
                 console.log('Report published to => ' + outputFile);
                 console.log('================================================');
-              })
+              });
+            
+              const chartsDir = './charts/lastReport/';
+              const chartsOutputFile = chartsDir + 'report.csv'; 
+              fs.writeFile(chartsOutputFile, csv, err => {
+                if (err) {
+                  console.error(err);
+                  return;
+                }
+                console.log('================================================');
+                console.log('[Charts] Expense published to => ' + chartsOutputFile);
+                console.log('================================================');
+              });
         
         }, opts);
     }
 
+    private sortDataByProfit() {
+        this.reportData.forEach(entry => {
+            entry.Profit = Number(entry.Profit);
+        });
+        this.reportData = _.orderBy(this.reportData, ['Profit'], ['desc']);
+    }
+    
     private showPlayerData (player, tag) {
         let playerStr = '    ';
         if(tag) {
@@ -81,20 +102,22 @@ export class Reports {
     private async addToReport(results) {
         _.forEach(results, expense => {
             let user_exists = false;
+            const masterUserId = this.utils.getMasterUserId(expense.ID);
             _.forEach(this.reportData, user => {
-                if (user.ID == expense.ID) {
+                if (user.ID == masterUserId) {
                     // console.log(`Found expense -> Player : ${sw_username} / ${user.ID}, Profit (Old): ${user.Profit}, Profit (New): ${expense.Profit}`);
                     user_exists = true;
                     _.forEach(this.reportMetrics, metric => {
                         user[metric] += expense[metric];
                         // console.log(`Updating metric -> ${metric}. Old: ${old}, Current: ${expense[metric]}, New: ${user[metric]}, Type: ${typeof(user[metric])} / ${typeof(expense[metric])}`);
                     });
-                    this.showPlayerData(user, 'UPDATE ' + expense.ID);
+                    this.showPlayerData(user, 'UPDATE ' + masterUserId);
                 }
             });
             if (!user_exists) {
+                expense.ID = masterUserId;
                 this.reportData.push(expense);
-                this.showPlayerData(expense, 'ADD ' + expense.ID);
+                this.showPlayerData(expense, 'ADD ' + masterUserId);
             }
         });
     

@@ -1,3 +1,4 @@
+import { config } from './config';
 import * as _ from 'lodash';
 const csvToJson = require('convert-csv-to-json');
 const fs = require('fs');
@@ -31,6 +32,20 @@ export class Utils {
             filename = id; // use exact filename
         }
         return filename;
+    }
+
+    public getMasterUserId (id) {
+        let masterId = id;
+        if (config.pkr2SwMapping) {
+            const swUsername = config.pkr2SwMapping[id];
+            _.forEach(config.pkr2SwMapping, (value, key) => {
+                if (value === swUsername) {
+                    // console.log(`User ${swUsername} : Old ID : ${id}, New ID : ${key}`);
+                    masterId = key;
+                };
+            })
+        }
+        return masterId;
     }
 
     public printHelp() {

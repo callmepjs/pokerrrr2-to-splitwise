@@ -1,28 +1,34 @@
 import { config } from './config';
 import * as _ from 'lodash';
+import { Utils } from './utils';
 const Splitwise = require('splitwise');
+const converter = require('json-2-csv');
+const fs = require('fs');
 
 export class Expenses {
     private splitwise: any = null;
     private splitwise_users: Map<string, string>;
+    private utils: Utils;
     public expenseTotal = 0;
 
     constructor(private args) {
         try {
-        this.splitwise_users = new Map<string, string>();
-        if (config.splitwise.key && config.splitwise.secret) {
-        this.splitwise = Splitwise({
-            consumerKey: config.splitwise.key,
-            consumerSecret: config.splitwise.secret,
-            //   logger: console.log
-        });
-    }
-    else {
-        console.log('INFO : No splitwise configuration found. Skipping.')
-    }
-    } catch (e) {
-        console.log('ERROR : Failed to connect to splitwise')
-;    }
+            this.utils = new Utils(this.args);
+            this.splitwise_users = new Map<string, string>();
+            if (config.splitwise.key && config.splitwise.secret) {
+                this.splitwise = Splitwise({
+                    consumerKey: config.splitwise.key,
+                    consumerSecret: config.splitwise.secret,
+                    //   logger: console.log
+                });
+            }
+            else {
+                console.log('INFO : No splitwise configuration found. Skipping.')
+            }
+        } catch (e) {
+            console.log('ERROR : Failed to connect to splitwise')
+                ;
+        }
     }
 
     public async fetchMembers(): Promise<Map<string, string>> {
@@ -55,7 +61,11 @@ export class Expenses {
         let sw_username = expense.ID;
         let sw_user = expense.Player.split(' ')[0].substring(0, 10).toUpperCase();
 
-        if (config.pkr2SwMapping && config.pkr2SwMapping[expense.ID]) {
+        let masterUserId1 = this.utils.getMasterUserId(expense.ID);
+        masterUserId1 = masterUserId1+ 1;
+        const masterUserId = expense.ID;
+
+        if (config.pkr2SwMapping && config.pkr2SwMapping[masterUserId]) {
             sw_username = config.pkr2SwMapping[expense.ID]; // map pkr names to sw names
         }
 
@@ -130,8 +140,9 @@ export class Expenses {
         }
     }
 
-    public createExpense(name, members, results, isGoldExpense) {
+    public createExpense(name, members, rawResults, isGoldExpense) {
         this.resetExpenseCost();
+        const results = this.consolidateResults(rawResults);
         const expense_request: any = {
             group_id: config.splitwise.group_id,
             description: this.generateExpenseDescription(name),
@@ -172,11 +183,10 @@ export class Expenses {
             return;
         }
 
-        const hos = members.get(paidBy.trim().split(' ')[0].toUpperCase());
-        if (!hos) {
+        const host = members.get(paidBy.trim().split(' ')[0].toUpperCase());
+        if (!host) {
             throw new Error('Could not find user that paid for gold -> ' + paidBy);
         }
-
 
         const gold_expenses: any = [];
         const owes = _.cloneDeep(results[0]); // winner owes gold
@@ -187,7 +197,7 @@ export class Expenses {
         _.map(results, r => {
             if (config.pkr2SwMapping[r.ID] === paidBy.trim().toUpperCase()) {
                 const gets = _.cloneDeep(r);
-                gets.user_id = hos;
+                gets.user_id = host;
                 gets.Profit = cost * 4; // convert to coins
                 gets.Hands = 0;
                 gold_expenses.push(gets);
@@ -197,5 +207,45 @@ export class Expenses {
         console.log(' ---------- Fees ------------')
         // console.log(gold_expenses);
         this.createExpense(name, members, gold_expenses, true);
+    }
+
+    public publishResultsForCharts(rawResults) {
+        const chartsDir = './charts/lastReport/';
+        const opts = { delimiter: { field: ';' } };
+        let csv;
+        const results = this.consolidateResults(rawResults);
+        converter.json2csv(results, (error, result) => {
+            csv = result;
+            // console.log(csv);
+            const outputFile = chartsDir + 'report.csv';
+            fs.writeFile(outputFile, csv, err => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                console.log('================================================');
+                console.log('[Charts] Expense published to => ' + outputFile);
+                console.log('================================================');
+            })
+        }, opts);
+    }
+
+    private consolidateResults(rawResults) {
+        const deleteIds: any = [];
+        let results = _.cloneDeep(rawResults);
+        results.forEach(entry => {
+            entry.Profit = Number(entry.Profit);
+            const masterUserId = this.utils.getMasterUserId(entry.ID);
+            let masterRecord = _.find(results, { ID: masterUserId });
+            if (entry.ID != masterUserId && masterRecord) {
+                ['Hands', 'Profit'].forEach(prop => {
+                    masterRecord[prop] += entry[prop];
+                });
+                deleteIds.push(entry.ID); 
+            }
+        });
+        results = _.filter(results, function(o) { return !deleteIds.includes(o.ID) })       
+        results = _.orderBy(results, ['Profit'], ['desc']);
+        return results;
     }
 }

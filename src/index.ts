@@ -25,7 +25,6 @@ const prompt = require('prompt');
             console.log('Unknown option ' + args.action);
             utils.printHelp();
     }
- 
 })()
 
 async function handleReport(args, utils) {
@@ -38,20 +37,21 @@ async function handleReport(args, utils) {
 async function handleExpense(args, utils) {
     utils.showTopBanner();
     try {
-    const gameExpenses = new Expenses(args);
-    const goldExpenses = new Expenses(args);
-    const resultsFile = utils.generateFileNameFromID(args.file);
-    const [members, results] = await Promise.all([
-        gameExpenses.fetchMembers(),
-        utils.readFileJSON(resultsFile)
-    ]);
-    await Promise.all([
-        gameExpenses.createExpense(args.file, members, results, false),
-        goldExpenses.createGoldExpense(args.file, args.hostingFees, args.hos, members, results)
-    ]);
+        const gameExpenses = new Expenses(args);
+        const goldExpenses = new Expenses(args);
+        const resultsFile = utils.generateFileNameFromID(args.file);
+        const [members, results] = await Promise.all([
+            gameExpenses.fetchMembers(),
+            utils.readFileJSON(resultsFile)
+        ]);
+        await Promise.all([
+            gameExpenses.createExpense(args.file, members, results, false),
+            goldExpenses.createGoldExpense(args.file, args.hostingFees, args.host, members, results)
+        ]);
 
-    utils.showBottomBanner(members, results, gameExpenses.expenseTotal);
-    // console.log(results); // for charts.js input
+        utils.showBottomBanner(members, results, gameExpenses.expenseTotal);
+        // console.log(results); // for charts.js input
+        // gameExpenses.publishResultsForCharts(results);
     }
     catch (e) {
         console.log('Failed to process expenses. Error : ' + e);
