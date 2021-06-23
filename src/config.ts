@@ -24,7 +24,7 @@ export const config = {
               type: 'number',
               required: false
           },
-          hos : {
+          host : {
             description: '[host]',
             type: 'string',
             required: false
