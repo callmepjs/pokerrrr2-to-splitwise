@@ -1,6 +1,5 @@
 import { Utils } from "./utils";
 import * as _ from 'lodash';
-import { config } from "./config";
 const fs = require('fs');
 const path = require('path');
 const converter = require('json-2-csv');
