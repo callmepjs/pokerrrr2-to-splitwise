@@ -70,7 +70,7 @@ export class Utils {
         const timeSpent = Number(stopTime) - Number(startTime);
         const duration = (timeSpent / (1000 * 3600)).toFixed(2);
         console.log('================================================');
-        console.log(' Duration: ' + duration + ' hrs'.padEnd(7) + 'Players : ' + Object.keys(results).length + '/' + Object.keys(members).length);
+        console.log(' Duration: ' + duration + ' hrs'.padEnd(7) + 'Players : ' + Object.keys(results).length + '/' + members.size);
         console.log(' Cost    : $' + String(totalCost).padEnd(8) + '  Fees    : $' + this.args.hostingFees);
         console.log('================================================');
         const createSplitwise = Number(this.args.createSplitwise);

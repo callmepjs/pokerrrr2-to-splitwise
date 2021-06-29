@@ -89,7 +89,7 @@ export  const config = {
 ### Generating Expenses
 
 #### Sample Input
-`node build/index.js --action=expense  --file=samples/Pokerrrr_sample_export.csv  --hostingFees=0 --hos=PJS --createSplitwise=0`
+`node build/index.js --action=expense  --file=samples/Pokerrrr_sample_export.csv  --hostingFees=0 --host=PJS --createSplitwise=0`
 OR
 ```
 > node build/index js
@@ -132,7 +132,7 @@ Run the app and provide the following options when prompted:
 
 #### Sample Input
 
-`node build/index.js --action=report  --file=samples/  --hostingFees=0 --hos=PJS --createSplitwise=0`
+`node build/index.js --action=report  --file=samples/  --hostingFees=0 --host=PJS --createSplitwise=0`
 
 OR
 ```
@@ -163,3 +163,11 @@ Files procesed      => 1
 Report published to => samples/summary-report.csv
 ================================================
 ```
+
+## Donation
+
+If you find this project useful, you can buy us a cup of coffee
+
+<a href="https://www.paypal.me/callmepjs" target="blank">
+    <img width="200" src="./assets/paypal-donate.png" alt="">
+</a><br>
